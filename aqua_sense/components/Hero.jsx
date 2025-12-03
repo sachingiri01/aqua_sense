@@ -18,7 +18,7 @@ export default function Hero() {
         >
           <source src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/ef711400-4759-4522-a94e-77bc1b479bba/generated_videos/close-up-of-water-droplets-falling-and-c-e21a1042-20251130140131.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-shakespeare-950/70 via-shakespeare-900/80 to-shakespeare-950/90 opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-shakespeare-950/70 via-shakespeare-900/80 to-shakespeare-950/90 opacity-80"></div>
       </div>
 
       {/* Caustic Light Effect - creates water refraction illusion */}
