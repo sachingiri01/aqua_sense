@@ -12,6 +12,7 @@ export default function Header() {
     { href: '/about', label: 'About Us' },
     { href: '/water-monitor', label: 'Live Monitor' },
     { href: '/ai-chat', label: 'AI Chat' },
+    { href: '/learn', label: 'Learn' },
   ];
 
   return (
