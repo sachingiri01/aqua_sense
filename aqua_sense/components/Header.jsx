@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Droplet, Menu, X } from 'lucide-react';
 import Image from 'next/image';
+import AuthButton from "@/components/AuthButton";
+
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -49,9 +52,9 @@ export default function Header() {
           </div>
 
           {/* CTA Button */}
-          <button className="hidden md:block relative px-6 py-3 bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold rounded-full overflow-hidden group shadow-lg hover:shadow-xl transition-shadow">
-            <span className="relative z-10">Get Started</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-accent to-shakespeare-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <button >
+            <AuthButton/>
+           
           </button>
 
           {/* Mobile Menu Button */}
@@ -80,8 +83,8 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            <button className="w-full px-6 py-3 bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold rounded-full shadow-lg">
-              Get Started
+            <button >
+             <AuthButton />
             </button>
           </div>
         )}
