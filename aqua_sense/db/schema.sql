@@ -5,6 +5,14 @@
 -- Enable UUID extension (pgcrypto for gen_random_uuid)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+CREATE TABLE IF NOT EXISTS "User" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT,
+  email TEXT UNIQUE NOT NULL,
+  image TEXT,
+  bio TEXT,
+  role TEXT CHECK (role IN ('staff', 'admin')) DEFAULT 'staff'
+);
 ---------------------------------------------------------
 -- 1) batches table
 ---------------------------------------------------------
