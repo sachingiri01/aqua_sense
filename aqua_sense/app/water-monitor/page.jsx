@@ -94,7 +94,7 @@ export default function WaterMonitor() {
       {/* Animated water background overlay */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute inset-0 opacity-30 animate-water-flow bg-gradient-to-br from-shakespeare-300/20 via-aqua-teal/20 to-shakespeare-400/20"></div>
-        
+        d
         {/* Floating particles */}
         {[...Array(20)].map((_, i) => (
           <div

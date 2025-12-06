@@ -1,8 +1,7 @@
 'use client';
-
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-
+import { useRef ,useEffect } from 'react';
 export default function BatchInputPanel({ onStartBatch }) {
   const [batchData, setBatchData] = useState({
     pH: 7.2,
@@ -14,19 +13,64 @@ export default function BatchInputPanel({ onStartBatch }) {
   });
 
   const handleStartBatch = () => {
+    setStreaming(false)
     onStartBatch(batchData);
   };
+   
+  const [streaming, setStreaming] = useState(true);
+   const eventSourceRef = useRef(null);
 
-  const handleRandomize = () => {
-    setBatchData({
-      pH: (6 + Math.random() * 3).toFixed(1),
-      TDS: Math.floor(200 + Math.random() * 500),
-      turbidity: (Math.random() * 15).toFixed(1),
-      DO: (4 + Math.random() * 6).toFixed(1),
-      temperature: (20 + Math.random() * 15).toFixed(1),
-      flowRate: (30 + Math.random() * 30).toFixed(1)
-    });
+const connectStream = () => {
+  const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/initial_sensors/stream`;
+
+  const es = new EventSource(url);
+
+  es.onmessage = (event) => {
+    if (!event.data || event.data.trim() === "") return;
+
+    try {
+      const parsed = JSON.parse(event.data.replace(/'/g, '"'));
+
+      setBatchData({
+        pH: (parsed.pH).toFixed(2),
+        TDS: (parsed.TDS_mg_L).toFixed(2),
+        turbidity: (parsed.turbidity_NTU).toFixed(2),
+        DO: (parsed.DO_mg_L).toFixed(2),
+        temperature: (parsed.temperature_C).toFixed(2),
+        flowRate: (parsed.conductivity_uS_cm).toFixed(2)
+      });
+
+    } catch (err) {
+      console.error("Parse Error:", err);
+    }
   };
+
+  es.onerror = (err) => console.error("SSE Error:", err);
+
+  eventSourceRef.current = es;
+};
+
+const disconnectStream = () => {
+  if (eventSourceRef.current) {
+    eventSourceRef.current.close();
+    eventSourceRef.current = null;
+    console.log("SSE Closed");
+  }
+};
+
+// 🔥 Automatically open/close based on streaming flag
+useEffect(() => {
+  if (streaming) {
+    // Already connected? Do nothing
+    if (!eventSourceRef.current) {
+      connectStream();
+    }
+  } else {
+    disconnectStream();
+  }
+
+  return () => disconnectStream();
+}, [streaming]);
 
   return (
     <motion.div
@@ -42,10 +86,10 @@ export default function BatchInputPanel({ onStartBatch }) {
           <p className="text-shakespeare-700">Live sensor readings from IoT devices</p>
         </div>
         <button
-          onClick={handleRandomize}
+          onClick={()=>setStreaming(!streaming)}
           className="glassmorphism rounded-xl px-4 py-2 text-shakespeare-900 font-semibold hover:scale-105 transition-all duration-300"
         >
-          🎲 Randomize
+          🎲 Toggle Sensor
         </button>
       </div>
 
@@ -81,6 +125,7 @@ export default function BatchInputPanel({ onStartBatch }) {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={handleStartBatch}
+        
         className="w-full bg-gradient-to-r from-royal-blue to-aqua-teal text-white font-display font-bold text-xl py-4 rounded-2xl shadow-xl shadow-royal-blue/30 hover:shadow-2xl hover:shadow-royal-blue/50 transition-all duration-300 relative overflow-hidden group"
       >
         <div className="absolute inset-0 bg-gradient-to-r from-aqua-teal to-royal-blue opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

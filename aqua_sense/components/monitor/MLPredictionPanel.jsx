@@ -9,8 +9,23 @@ const useCases = [
   { id: 'cooling', name: 'Cooling System', icon: '❄️', color: 'cyan', requirements: { pH: [6.0, 9.0], TDS: [0, 600], turbidity: [0, 10] } },
   { id: 'unusable', name: 'Unusable', icon: '⚠️', color: 'red', requirements: null }
 ];
+const labelMap = {
+  irrigation: { icon: "🌾", name: "Irrigation Water" },
+  cooling: { icon: "❄️", name: "Cooling System" },
+  freshwater: { icon: "💧", name: "Fresh Water" },
+  not_usable: { icon: "⚠️", name: "Unusable" },
+  unusable: { icon: "⚠️", name: "Unusable" },
+
+  potable_high_quality_reuse: { 
+    icon: "🚰",
+    name: "Potable High Quality Reuse"
+  }
+};
+
 
 function calculateConfidence(batchData, useCase) {
+  console.log("the data recieved from the prv catch ",batchData);
+  
   if (!useCase.requirements) return 0;
   
   let score = 0;
@@ -32,28 +47,84 @@ export default function MLPredictionPanel({ batchData, onPredictionComplete }) {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [predictions, setPredictions] = useState([]);
   const [recommendedUse, setRecommendedUse] = useState(null);
+   const fetchPrediction = async (batchData) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/pridiction_start`;
+
+    const payload = {
+      pH: batchData.pH,
+      turbidity_NTU: batchData.turbidity,
+      temperature_C: batchData.temperature,
+      DO_mg_L: batchData.DO,
+      conductivity_uS_cm: batchData.flowRate,
+      TDS_mg_L: batchData.TDS
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error("Backend prediction failed");
+
+    return await res.json();
+
+  } catch (err) {
+    console.error("Prediction Error:", err);
+    return null;
+  }
+};
 
   useEffect(() => {
-    setIsAnalyzing(true);
-    
-    // Simulate ML processing time
-    const timer = setTimeout(() => {
-      const calculated = useCases.map(useCase => ({
-        ...useCase,
-        confidence: calculateConfidence(batchData, useCase)
-      })).sort((a, b) => b.confidence - a.confidence);
-      
-      setPredictions(calculated);
-      setRecommendedUse(calculated[0]);
+  if (!batchData) return;
+
+  setIsAnalyzing(true);
+
+  const timer = setTimeout(async () => {
+    const prediction = await fetchPrediction(batchData);
+    if (!prediction) {
       setIsAnalyzing(false);
-      
-      if (onPredictionComplete) {
-        onPredictionComplete(calculated);
-      }
-    }, 2500);
+      return;
+    }
+
+    const formatLabel = (label) => {
+      return label
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    };
+
+    const conf = prediction.category_confidence;
     
-    return () => clearTimeout(timer);
-  }, [batchData]);
+    const formatted = conf.map((item, index) => {
+  const rawLabel = item.label;
+  const mapped = labelMap[rawLabel] || {
+    icon: "❓",
+    name: formatLabel(rawLabel)
+  };
+
+  return {
+    id: index,
+    name: mapped.name,
+    icon: mapped.icon,
+    confidence: +(item.confidence*100).toFixed(2)
+  };
+});
+
+    setPredictions(formatted);
+    setRecommendedUse(formatted[0].name); // Recommended use is formatted label
+
+    setIsAnalyzing(false);
+
+    if (onPredictionComplete) {
+      onPredictionComplete(formatted);
+    }
+
+  }, 800);
+
+  return () => clearTimeout(timer);
+
+}, [batchData]);
 
   return (
     <motion.div
@@ -167,7 +238,7 @@ export default function MLPredictionPanel({ batchData, onPredictionComplete }) {
                           'text-red-600'
                         }`}
                       >
-                        {prediction.confidence}%
+                      {(prediction.confidence).toFixed(2)}%
                       </motion.span>
                     </div>
                   </div>

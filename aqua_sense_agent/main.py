@@ -185,6 +185,89 @@ def get_pridiction_start():
     }
 
 
+from pydantic import BaseModel
+
+class SensorInput(BaseModel):
+    pH: float
+    turbidity_NTU: float
+    temperature_C: float
+    DO_mg_L: float
+    conductivity_uS_cm: float
+    TDS_mg_L: float
+
+
+@app.post("/pridiction_start")
+def get_pridiction_start(sensor: SensorInput):
+
+    # Use frontend data instead of vnode.step()
+    data = sensor.dict()
+
+    X = np.array([[ 
+        data["pH"],
+        data["turbidity_NTU"],
+        data["temperature_C"],
+        data["DO_mg_L"],
+        data["conductivity_uS_cm"],
+        data["TDS_mg_L"]
+    ]])
+
+    # Scaling
+    X_scaled = scaler.transform(X)
+
+    # Predictions
+    pred_rf = rf_model.predict(X_scaled)[0]
+    pred_lr = lr_model.predict(X_scaled)[0]
+    pred_dt = dt_model.predict(X_scaled)[0]
+
+    predictions = [pred_rf, pred_lr, pred_dt]
+    final_pred = max(set(predictions), key=predictions.count)
+    final_label = label_encoder.inverse_transform([final_pred])[0]
+
+    # Probabilities
+    probs_rf = rf_model.predict_proba(X_scaled)[0]
+    probs_lr = lr_model.predict_proba(X_scaled)[0]
+    probs_dt = dt_model.predict_proba(X_scaled)[0]
+
+    num_classes = len(probs_rf)
+    categories = label_encoder.inverse_transform(list(range(num_classes)))
+
+    def clamp01(x):
+        try:
+            x = float(x)
+        except:
+            return 0.0
+        return max(0.0, min(1.0, x))
+
+    # Combined confidence
+    category_confidence = []
+    for i, cat in enumerate(categories):
+        p_rf = clamp01(probs_rf[i])
+        p_lr = clamp01(probs_lr[i])
+        p_dt = clamp01(probs_dt[i])
+        avg_prob = (p_rf + p_lr + p_dt) / 3
+        category_confidence.append({
+            "label": cat,
+            "confidence": float(avg_prob)
+        })
+
+    category_confidence_sorted = sorted(
+        category_confidence,
+        key=lambda x: x["confidence"],
+        reverse=True
+    )
+
+    return {
+        "sensor_data": data,   # frontend data returned back
+
+        "model_predictions": {
+            "random_forest": label_encoder.inverse_transform([pred_rf])[0],
+            "logistic_regression": label_encoder.inverse_transform([pred_lr])[0],
+            "decision_tree": label_encoder.inverse_transform([pred_dt])[0],
+        },
+
+        "category_confidence": category_confidence_sorted,
+        "final_majority_label": final_label
+    }
 
 
 @app.get("/get_prediction_last_stage")
