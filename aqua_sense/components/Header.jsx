@@ -16,6 +16,7 @@ export default function Header() {
     { href: '/water-monitor', label: 'Live Monitor' },
     { href: '/ai-chat', label: 'AI Chat' },
     { href: '/learn', label: 'Learn' },
+    { href: '/community', label: 'Community' },
   ];
 
   return (
