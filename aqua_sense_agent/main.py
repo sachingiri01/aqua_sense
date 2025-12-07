@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi import FastAPI
 import joblib
 import numpy as np
+from search_worker import searching
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, Path
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -16,6 +17,8 @@ from datetime import datetime, timezone
 import asyncio
 import random, math
 import numpy as np
+from chat_worker import chat_work
+from upload import update_policy_to_pinecone
 
 from virtual_sensors.stage_sensors import (
     make_primary_node,
@@ -28,8 +31,6 @@ from virtual_sensors.stage_sensors import (
     _CONFIG_LOCK,
     _STAGE_CONFIG,
 )
-
-
 
 
 from virtual_sensors.initial_sensors import VirtualSensorNode
@@ -76,11 +77,11 @@ async def chatting_worker(request: Request):
     print("📜 History:", history)
 
 
-    # res =chat_work(msg,history)
+    res =chat_work(msg,history)
     return {
         "msg":"chat worker response",
-        # "data":res,
-        "data": chat_data
+        "data":res,
+        # "data": chat_data
         }
 
 
@@ -97,7 +98,6 @@ def get_sensor_data():
         "conductivity_uS_cm": 410,
         "TDS_mg_L": 290
     }
-
 
 scaler = joblib.load("scaler.joblib")
 rf_model = joblib.load("random_forest.joblib")
@@ -185,22 +185,18 @@ def get_pridiction_start():
     }
 
 
-from pydantic import BaseModel
-
-class SensorInput(BaseModel):
-    pH: float
-    turbidity_NTU: float
-    temperature_C: float
-    DO_mg_L: float
-    conductivity_uS_cm: float
-    TDS_mg_L: float
-
-
 @app.post("/pridiction_start")
-def get_pridiction_start(sensor: SensorInput):
+def get_pridiction_start(sensor: dict):
 
-    # Use frontend data instead of vnode.step()
-    data = sensor.dict()
+    # Extract values safely from incoming dict
+    data = {
+        "pH": float(sensor.get("pH", 0)),
+        "turbidity_NTU": float(sensor.get("turbidity_NTU", 0)),
+        "temperature_C": float(sensor.get("temperature_C", 0)),
+        "DO_mg_L": float(sensor.get("DO_mg_L", 0)),
+        "conductivity_uS_cm": float(sensor.get("conductivity_uS_cm", 0)),
+        "TDS_mg_L": float(sensor.get("TDS_mg_L", 0)),
+    }
 
     X = np.array([[ 
         data["pH"],
@@ -233,12 +229,10 @@ def get_pridiction_start(sensor: SensorInput):
 
     def clamp01(x):
         try:
-            x = float(x)
+            return max(0.0, min(1.0, float(x)))
         except:
             return 0.0
-        return max(0.0, min(1.0, x))
 
-    # Combined confidence
     category_confidence = []
     for i, cat in enumerate(categories):
         p_rf = clamp01(probs_rf[i])
@@ -250,6 +244,7 @@ def get_pridiction_start(sensor: SensorInput):
             "confidence": float(avg_prob)
         })
 
+    # Sort highest → lowest confidence
     category_confidence_sorted = sorted(
         category_confidence,
         key=lambda x: x["confidence"],
@@ -257,14 +252,12 @@ def get_pridiction_start(sensor: SensorInput):
     )
 
     return {
-        "sensor_data": data,   # frontend data returned back
-
+        "sensor_data": data,
         "model_predictions": {
             "random_forest": label_encoder.inverse_transform([pred_rf])[0],
             "logistic_regression": label_encoder.inverse_transform([pred_lr])[0],
             "decision_tree": label_encoder.inverse_transform([pred_dt])[0],
         },
-
         "category_confidence": category_confidence_sorted,
         "final_majority_label": final_label
     }
@@ -448,3 +441,59 @@ async def websocket_stream(ws: WebSocket, interval: float = 1.0, node_id: str = 
             await asyncio.sleep(node.interval)
     except WebSocketDisconnect:
         return
+
+
+from rag_upload import rag_upload
+
+@app.get("/rag-upload")
+async def upload_data(request: Request):
+    """
+   
+    """
+    try:
+        response=rag_upload();
+        return response
+
+    except Exception as e:
+        return {"status": "error", "msg": str(e)}
+    
+
+
+
+
+@app.post("/update-policy")
+async def upload_data(request: Request):
+    """
+    Endpoint to receive gig JSON and upload to Pinecone.
+    """
+    try:
+        data = await request.json()
+        msg=data.get('context');
+        doc_id=data.get('doc_id') or "User_manual"
+        source=data.get('source') or "manual"
+        doc_type=data.get('doc_type') or "general"  
+        print("Received user:", data.get('msg'))
+        if(len(msg)==0):
+            return {"status": "success", "msg": f"Nothing to upload"}
+        result = update_policy_to_pinecone(
+              raw_text=msg,
+              doc_id=doc_id,
+              doc_type=doc_type,
+              source=source,
+        )  
+        print("response update",result)
+        return result
+
+    except Exception as e:
+        return {"status": "error", "msg": str(e)}
+    
+
+class UserRequest(BaseModel):
+    msg: str
+
+
+@app.post("/search_worker")
+def search_worker(request: UserRequest):
+    print(f"Received request: {request.msg}")
+    res = searching(request.msg)
+    return {"data": res, "msg": "search worker response"}
