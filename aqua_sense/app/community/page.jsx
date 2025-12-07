@@ -8,9 +8,13 @@ import ShareIssueSection from '@/components/community/ShareIssueSection';
 import ExpertAnswers from '@/components/community/ExpertAnswers';
 import StaffReporting from '@/components/community/StaffReporting';
 import Leaderboard from '@/components/community/Leaderboard';
+import RequireAuth from "@/components/auth/RequireAuth";
+
+
 
 export default function CommunityPage() {
   return (
+    <RequireAuth>
     <main className="min-h-screen bg-shakespeare-50">
       <Header />
       
@@ -44,5 +48,6 @@ export default function CommunityPage() {
       {/* Footer */}
       <Footer />
     </main>
+    </RequireAuth>
   );
 }

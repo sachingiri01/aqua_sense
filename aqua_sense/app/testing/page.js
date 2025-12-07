@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import ClientAuth from "../../components/auth/ClientAuth";
 
 export default function PrimarySensorStream() {
   const [data, setData] = useState(null);
@@ -43,6 +44,7 @@ export default function PrimarySensorStream() {
   }, [streaming]);
 
   return (
+    <ClientAuth>
     <div>
       <h1>Primary Sensor Live Data</h1>
 
@@ -55,5 +57,6 @@ export default function PrimarySensorStream() {
 
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
+    </ClientAuth>
   );
 }

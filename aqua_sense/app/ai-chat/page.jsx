@@ -5,6 +5,8 @@ import Sidebar from '@/components/Sidebar';
 import ChatWindow from '@/components/ChatWindow';
 import RightPanel from '@/components/RightPanel';
 import Header from '@/components/Header';
+import ClientAuth from "@/components/auth/ClientAuth";
+
 export default function AIChatPage() {
   // Available AI agents with Indian context
   const [agents] = useState([
@@ -156,6 +158,7 @@ export default function AIChatPage() {
   };
 
   return (
+    <ClientAuth>
     //  <main className="flex flex-col min-h-screen">
     //   <Header/>
     <div className="flex flex-1 h-screen overflow-hidden bg-shakespeare-50 ">
@@ -183,5 +186,6 @@ export default function AIChatPage() {
       />
     </div>
     // </main>
+    </ClientAuth>
   );
 }
