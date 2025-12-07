@@ -17,6 +17,7 @@ export default function Header() {
     { href: '/ai-chat', label: 'AI Chat' },
     { href: '/learn', label: 'Learn' },
     { href: '/community', label: 'Community' },
+    { href: '/admin', label: 'Admin' },
   ];
 
   return (
