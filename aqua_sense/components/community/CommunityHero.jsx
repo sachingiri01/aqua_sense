@@ -33,7 +33,7 @@ export default function CommunityHero() {
               bottom: -20,
             }}
             animate={{
-              y: [-20, -window.innerHeight],
+              y: [-20, -700],
               x: [0, Math.random() * 100 - 50],
               scale: [0, 1, 0.8, 0],
               opacity: [0, 0.6, 0.4, 0],

@@ -131,77 +131,23 @@ CREATE TABLE IF NOT EXISTS hold_events (
     corrective_action TEXT
 );
 
+CREATE TABLE IF NOT EXISTS broadcasts (
+    broadcast_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
-CREATE TABLE IF NOT EXISTS "User" (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT,
-  email TEXT UNIQUE NOT NULL,
-  image TEXT,
-  bio TEXT,
-  role TEXT CHECK (role IN ('staff', 'admin')) DEFAULT 'staff'
-);
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
-CREATE TABLE IF NOT EXISTS issue_reports (
-    report_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    -- FK to User table
+    -- Who posted it (optional)
     user_id UUID REFERENCES "User"(id) ON DELETE SET NULL,
 
-    -- Form fields
+    -- Broadcast category
+    broadcast_type TEXT NOT NULL CHECK (broadcast_type IN 
+        ('announcement', 'alert', 'update', 'tip', 'event')
+    ),
+
     title TEXT NOT NULL,
-    category TEXT CHECK (category IN (
-    'equipment',
-    'quality',
-    'leak',
-    'maintenance',
-    'safety',
-    'other'
-    )) NOT NULL,
+    message TEXT NOT NULL,
 
-    priority TEXT CHECK (priority IN ('low','medium','high','critical')) NOT NULL,
-
-    location TEXT NOT NULL,
-    description TEXT NOT NULL,
-
-    -- store uploaded file URLs (S3, Cloudinary, or local)
-    photos TEXT[],
-
-    -- report status
-    status TEXT CHECK (status IN ('new','in_progress','resolved','closed'))
-        DEFAULT 'new',
-
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
--- 1) Create ENUM type only if it does not exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'org_type') THEN
-        CREATE TYPE org_type AS ENUM (
-            'Agriculture',
-            'Manufacturing',
-            'Municipal',
-            'Commercial',
-            'Other'
-        );
-    END IF;
-END$$;
-
--- 2) Enable UUID extension (safe and non-destructive)
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- 3) Create the table ONLY if it does NOT already exist
-CREATE TABLE IF NOT EXISTS contact_requests (
-    request_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),     -- TYPE: UUID
-    full_name VARCHAR(150) NOT NULL,                    -- TYPE: String
-    email VARCHAR(150) NOT NULL,                        -- TYPE: String
-    phone VARCHAR(20) NOT NULL,                         -- TYPE: String
-    organization_type org_type NOT NULL,                -- TYPE: ENUM (strict)
-    message TEXT,                                       -- TYPE: Text
-    created_at TIMESTAMPTZ DEFAULT NOW()                -- TYPE: Timestamp
+ 
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ---------------------------------------------------------

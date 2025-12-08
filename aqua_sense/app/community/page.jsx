@@ -4,7 +4,7 @@ import CommunityHero from '@/components/community/CommunityHero';
 import BroadcastPanel from '@/components/community/BroadcastPanel';
 import CategoryFilters from '@/components/community/CategoryFilters';
 import CommunityFeed from '@/components/community/CommunityFeed';
-import ShareIssueSection from '@/components/community/ShareIssueSection';
+import ShareMessage from '@/components/community/ShareMessage';
 import ExpertAnswers from '@/components/community/ExpertAnswers';
 import StaffReporting from '@/components/community/StaffReporting';
 import Leaderboard from '@/components/community/Leaderboard';
@@ -33,7 +33,7 @@ export default function CommunityPage() {
         <CommunityFeed />
         
         {/* Share Issue Section */}
-        <ShareIssueSection />
+        <ShareMessage />
         
         {/* AI-Powered Answers (removed human expert) */}
         <ExpertAnswers />
