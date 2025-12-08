@@ -22,6 +22,9 @@ export default function BroadcastPanel() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
 
+  // posting state (disable buttons and change text while posting)
+  const [isPosting, setIsPosting] = useState(false);
+
   useEffect(() => {
     if (isPaused) return;
     if (!broadcasts || broadcasts.length === 0) return;
@@ -166,6 +169,9 @@ export default function BroadcastPanel() {
       return;
     }
 
+    // set posting flag
+    setIsPosting(true);
+
     try {
       const res = await fetch('/api/broadcasts', {
         method: 'POST',
@@ -218,6 +224,9 @@ export default function BroadcastPanel() {
     } catch (err) {
       console.error('Network error posting broadcast:', err);
       alert('Network error while posting broadcast.');
+    } finally {
+      // always reset posting flag
+      setIsPosting(false);
     }
   };
 
@@ -263,14 +272,16 @@ export default function BroadcastPanel() {
 
                 <div className="flex flex-col items-end">
                   {isAdmin && (
-  <button
-    onClick={handleOpenPost}
-    className="px-4 py-2 rounded-xl bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold text-sm hover:shadow-lg transition-all flex items-center gap-2"
-  >
-    <Upload className="w-4 h-4" />
-    Post Broadcast
-  </button>
-)}
+                    <button
+                      onClick={handleOpenPost}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold text-sm hover:shadow-lg transition-all flex items-center gap-2"
+                      disabled={isPosting}
+                      aria-disabled={isPosting}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Post Broadcast
+                    </button>
+                  )}
 
 
                   {/* Minimal non-intrusive notice for non-admins (keeps original UI intact) */}
@@ -364,7 +375,10 @@ export default function BroadcastPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowUploadModal(false)}
+            onClick={() => {
+              // prevent closing while posting
+              if (!isPosting) setShowUploadModal(false);
+            }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -382,8 +396,10 @@ export default function BroadcastPanel() {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-shakespeare-950">📢 Create Broadcast</h2>
                   <button
-                    onClick={() => setShowUploadModal(false)}
+                    onClick={() => { if (!isPosting) setShowUploadModal(false); }}
                     className="w-10 h-10 rounded-full hover:bg-shakespeare-100 flex items-center justify-center transition-colors"
+                    disabled={isPosting}
+                    aria-disabled={isPosting}
                   >
                     <X className="w-5 h-5 text-shakespeare-600" />
                   </button>
@@ -398,6 +414,7 @@ export default function BroadcastPanel() {
                       value={uploadForm.type}
                       onChange={(e) => setUploadForm({ ...uploadForm, type: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl bg-shakespeare-50 border border-shakespeare-300 focus:border-shakespeare-500 focus:ring-2 focus:ring-shakespeare-200 outline-none transition-all text-shakespeare-900 font-medium"
+                      disabled={isPosting}
                     >
                       <option value="announcement">📢 Announcement</option>
                       <option value="alert">⚠️ Alert</option>
@@ -418,6 +435,7 @@ export default function BroadcastPanel() {
                       placeholder="Enter broadcast title..."
                       className="w-full px-4 py-3 rounded-xl bg-shakespeare-50 border border-shakespeare-300 focus:border-shakespeare-500 focus:ring-2 focus:ring-shakespeare-200 outline-none transition-all text-shakespeare-900 font-medium placeholder:text-shakespeare-400"
                       required
+                      disabled={isPosting}
                     />
                   </div>
 
@@ -432,6 +450,7 @@ export default function BroadcastPanel() {
                       rows="4"
                       className="w-full px-4 py-3 rounded-xl bg-shakespeare-50 border border-shakespeare-300 focus:border-shakespeare-500 focus:ring-2 focus:ring-shakespeare-200 outline-none transition-all text-shakespeare-900 font-medium placeholder:text-shakespeare-400 resize-none"
                       required
+                      disabled={isPosting}
                     />
                   </div>
 
@@ -440,15 +459,25 @@ export default function BroadcastPanel() {
                       type="button"
                       onClick={() => setShowUploadModal(false)}
                       className="flex-1 px-6 py-3 rounded-xl bg-shakespeare-100 text-shakespeare-700 font-semibold hover:bg-shakespeare-200 transition-colors"
+                      disabled={isPosting}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                      disabled={isPosting}
+                      aria-busy={isPosting}
                     >
-                      <Send className="w-4 h-4" />
-                      Post Broadcast
+                      {isPosting ? (
+                        // keep layout consistent — just text changes to "Broadcasting"
+                        'Broadcasting'
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Post Broadcast
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>

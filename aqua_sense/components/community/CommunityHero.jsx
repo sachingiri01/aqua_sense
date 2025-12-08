@@ -1,9 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+
 import { MessageSquare, AlertCircle, TrendingUp } from 'lucide-react';
 
 export default function CommunityHero() {
+  const router = useRouter();
   return (
     <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
       {/* HD Video Background */}
@@ -77,17 +80,24 @@ export default function CommunityHero() {
           {/* CTA Buttons with bubble effect */}
           <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
             <motion.a
-              href="#ask-question"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="group relative px-8 py-4 bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all overflow-hidden"
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                Ask a Question
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-royal-blue to-shakespeare-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </motion.a>
+  href="#"
+  onClick={(e) => {
+    e.preventDefault();
+    router.push('/ai-chat');
+  }}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  className="group relative px-8 py-4 bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all overflow-hidden"
+  role="link"
+  aria-label="Go to AI Chat"
+>
+  <span className="relative z-10 flex items-center gap-2">
+    <MessageSquare className="w-5 h-5" />
+    Ask a Question
+  </span>
+  <div className="absolute inset-0 bg-gradient-to-r from-royal-blue to-shakespeare-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+</motion.a>
+
 
             <motion.a
               href="#share-issue"
@@ -102,7 +112,7 @@ export default function CommunityHero() {
               <div className="absolute inset-0 bg-shakespeare-100 opacity-0 group-hover:opacity-100 transition-opacity" />
             </motion.a>
 
-            <motion.a
+            {/* <motion.a
               href="#trending"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -113,7 +123,7 @@ export default function CommunityHero() {
                 Trending Topics
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-shakespeare-500 to-aqua-teal opacity-0 group-hover:opacity-100 transition-opacity" />
-            </motion.a>
+            </motion.a> */}
           </div>
 
           {/* Community stats */}
