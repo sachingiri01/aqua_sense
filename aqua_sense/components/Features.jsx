@@ -15,7 +15,7 @@ export default function Features() {
     {
       icon: Brain,
       title: 'AI-Powered Forecasting',
-      description: 'Machine learning models predict water demand, optimal reuse scenarios, and maintenance schedules.',
+      description: 'Machine learning models predict optimal reuse scenarios based on historical data and real-time inputs.',
       gradient: 'from-aqua-teal to-shakespeare-500',
       shape: 'wave',
     },
@@ -36,7 +36,7 @@ export default function Features() {
     {
       icon: Gauge,
       title: 'Performance Analytics',
-      description: 'Detailed dashboards and reports showing water savings, efficiency metrics, and environmental impact.',
+      description: 'Detailed dashboards and reports showing current batch details, efficiency metrics, and environmental impact.',
       gradient: 'from-shakespeare-600 to-shakespeare-800',
       shape: 'wave',
     },
@@ -49,8 +49,8 @@ export default function Features() {
     },
     {
       icon: Cloud,
-      title: 'Cloud-Based Platform',
-      description: 'Access your water management system from anywhere with secure cloud infrastructure.',
+      title: 'Remote-Based Platform',
+      description: 'Access your water management system from anywhere with secure infrastructure.',
       gradient: 'from-shakespeare-400 to-royal-blue',
       shape: 'liquid',
     },
@@ -179,9 +179,9 @@ export default function Features() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-center mt-20"
         >
-          <button className="px-10 py-5 bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-bold text-lg rounded-full shadow-2xl hover:shadow-shakespeare-500/50 hover:scale-105 transition-all">
+          {/* <button className="px-10 py-5 bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-bold text-lg rounded-full shadow-2xl hover:shadow-shakespeare-500/50 hover:scale-105 transition-all">
             Explore All Features
-          </button>
+          </button> */}
         </motion.div>
       </div>
     </section>

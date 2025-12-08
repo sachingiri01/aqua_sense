@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Play, Droplets, TrendingUp, Zap } from 'lucide-react';
+import { ArrowRight, Play, Droplets, TrendingUp, Zap, Link as Lq } from 'lucide-react';
 import Image from 'next/image';
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -95,7 +96,7 @@ export default function Hero() {
           >
             <button className="group relative px-10 py-5 bg-gradient-to-r from-orange-accent to-shakespeare-500 text-white font-bold text-lg rounded-full overflow-hidden shadow-2xl hover:shadow-orange-accent/50 transition-all hover:scale-105">
               <span className="relative z-10 flex items-center space-x-2">
-                <span>Explore AquaSense</span>
+               <Link href='/water-monitor'><span>Explore AquaSense</span></Link>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-shakespeare-400 to-royal-blue opacity-0 group-hover:opacity-100 transition-opacity animate-water-flow"></div>
@@ -117,7 +118,7 @@ export default function Hero() {
             className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
           >
             {[
-              { icon: Droplets, value: '50M+', label: 'Liters Saved Daily', gradient: 'from-shakespeare-400 to-shakespeare-600' },
+              { icon: Droplets, value: 'Projected 50M+', label: 'Liters Saved Daily (after full-scale deployment)', gradient: 'from-shakespeare-400 to-shakespeare-600' },
               { icon: TrendingUp, value: '85%', label: 'Efficiency Boost', gradient: 'from-aqua-teal to-shakespeare-500' },
               { icon: Zap, value: 'Real-time', label: 'AI Monitoring', gradient: 'from-orange-accent to-shakespeare-600' },
             ].map((stat, index) => (
