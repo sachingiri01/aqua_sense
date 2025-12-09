@@ -1121,19 +1121,59 @@
 
 
 
+// 
+
+
+
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import BatchInputPanel from '@/components/monitor/BatchInputPanel';
 
 /* ===========================
    CONFIG: stages + thresholds
    =========================== */
 const treatmentStages = [
-  { id: "primary", name: "Primary Filtration", icon: "🔷", duration: 3000 },
-  { id: "secondary", name: "Secondary Treatment", icon: "⚗️", duration: 3000 },
-  { id: "final", name: "Final Polishing", icon: "✨", duration: 3000 }
+  { 
+    id: "primary", 
+    name: "Primary Filtration", 
+    icon: "🔷", 
+    duration: 3000,
+    wastage: [
+      { type: "Screenings & Grit", description: "Solid debris", waterLoss: "<0.1%" },
+      { type: "Filter Backwash", description: "Cleaning cycles", waterLoss: "2-5%" },
+      { type: "Settling Tank Sludge", description: "Primary sludge", waterLoss: "0.5-1%" }
+    ],
+    efficiency: "85% to 90%"
+  },
+  { 
+    id: "secondary", 
+    name: "Secondary Treatment", 
+    icon: "⚗️", 
+    duration: 3000,
+    wastage: [
+      { type: "Waste Activated Sludge (WAS)", description: "Extra biomass", waterLoss: "0.5-2%" },
+      { type: "Foam & Scum", description: "Biological froth", waterLoss: "<0.1%" },
+      { type: "Evaporation", description: "From aeration tanks", waterLoss: "0.1-0.3%" },
+      { type: "Sampling & drainage", description: "Testing losses", waterLoss: "<0.1%" },
+      { type: "Clarifier overflow loss", description: "Process loss", waterLoss: "0.1-0.3%" }
+    ],
+    efficiency: "90% to 99%"
+  },
+  { 
+    id: "final", 
+    name: "Final Polishing", 
+    icon: "✨", 
+    duration: 3000,
+    wastage: [
+      { type: "Membrane/Filter Backwash", description: "RO/UF cleaning", waterLoss: "5-15%" },
+      { type: "UV System Flushing", description: "Maintenance flush", waterLoss: "<0.1%" },
+      { type: "Chemical Dosing Residue", description: "Treatment byproduct", waterLoss: "<0.1%" },
+      { type: "Final Filter Rinse", description: "Polishing filter", waterLoss: "0.5-1%" }
+    ],
+    efficiency: "95% to 99.9%"
+  }
 ];
 
 // Category-stage thresholds (sensible defaults — tweak as needed)
@@ -1260,6 +1300,7 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
   const [faultAlerts, setFaultAlerts] = useState([]);
   const [stageMetrics, setStageMetrics] = useState({ primary: {}, secondary: {}, final: {} });
   const [isProcessing, setIsProcessing] = useState(Boolean(processingData));
+  const [batchData, setBatchData] = useState(null);
 
   // settings
   const selectedCategory = (processingData && processingData.intendedUse && processingData.intendedUse.id) || defaultProcessing.intendedUse.id;
@@ -1450,6 +1491,37 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
     setIsProcessing(true);
   };
 
+  const handleStartBatch = (data) => {
+    setBatchData(data);
+  };
+
+  useEffect(() => {
+    const allDone =
+      passedStages.includes("primary") &&
+      passedStages.includes("secondary") &&
+      passedStages.includes("final");
+
+    if (!allDone) return; // if not finished, exit
+
+    const finalResult = {
+      batchNumber: processingData?.batchNumber || 1,
+      intendedUse: processingData?.intendedUse || defaultProcessing.intendedUse,
+
+      // Latest sensor packets
+      primary: primaryRef.current,
+      secondary: secondaryRef.current,
+      tertiary: tertiaryRef.current,
+
+      // Optional metadata
+      completedAt: new Date().toISOString(),
+      status: "success"
+    };
+
+    // Send final batch result to parent
+    if (onComplete) onComplete(finalResult);
+
+  }, [passedStages]);
+
   /* ===========================
      Render UI
      =========================== */
@@ -1466,10 +1538,6 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
       </div>
     );
   }
-    const handleStartBatch = (data) => {
-    setBatchData(data);
-    // setCurrentStep('prediction');
-  };
 
   return (
     <div className="space-y-6">
@@ -1544,6 +1612,31 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
                         </div>
                       </div>
 
+                      {/* Wastage Information */}
+                      {stage.wastage && stage.wastage.length > 0 && (
+                        <div style={{ marginBottom: 16, padding: 12, background: "rgba(148, 163, 184, 0.08)", borderRadius: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>💧 Stage Wastage</div>
+                            <div style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: "#059669", padding: "2px 8px", background: "rgba(16, 185, 129, 0.1)", borderRadius: 4 }}>
+                              Efficiency: {stage.efficiency}
+                            </div>
+                          </div>
+                          <div style={{ display: "grid", gap: 8 }}>
+                            {stage.wastage.map((waste, wIdx) => (
+                              <div key={wIdx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", background: "rgba(255, 255, 255, 0.5)", borderRadius: 6, fontSize: 12 }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 700, color: "#0f172a" }}>{waste.type}</div>
+                                  <div style={{ color: "#64748b", fontSize: 11 }}>{waste.description}</div>
+                                </div>
+                                <div style={{ fontWeight: 800, color: "#dc2626", fontSize: 13, minWidth: 60, textAlign: "right" }}>
+                                  {waste.waterLoss}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* metric grid */}
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 10 }}>
                         {metricKeys.length > 0 ? metricKeys.map(k => {
@@ -1586,18 +1679,40 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
           <motion.div ref={completeRef} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mt-8 glassmorphism-strong rounded-3xl p-8 border-2">
             <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
             <h2 style={{ fontSize: 28, fontWeight: 800 }}>Treatment Complete!</h2>
-            <p style={{ color: "#16a34a" }}>Water processed and ready for <strong>{defaultProcessing.intendedUse.name}</strong></p>
-            <div style={{ marginTop: 10 }}>
-              <button onClick={() => startProcessing()} style={{ padding: "8px 14px", background: "#34d399", borderRadius: 8, color: "#042A2B", fontWeight: 700 }}>Run another batch</button>
+            <p style={{ color: "#16a34a", marginBottom: 16 }}>Water processed and ready for <strong>{defaultProcessing.intendedUse.name}</strong></p>
+            
+            {/* Overall Efficiency Summary */}
+            <div style={{ marginBottom: 20, padding: 16, background: "linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15))", borderRadius: 12, border: "2px solid rgba(16, 185, 129, 0.3)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 12 }}>
+                <div style={{ fontSize: 32 }}>✨</div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, color: "#047857" }}>Overall Treatment Efficiency</h3>
+              </div>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
+                {treatmentStages.map((stage, idx) => (
+                  <div key={`eff-${idx}`} style={{ padding: 12, background: "rgba(255, 255, 255, 0.6)", borderRadius: 8, textAlign: "center" }}>
+                    <div style={{ fontSize: 24, marginBottom: 4 }}>{stage.icon}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", marginBottom: 4 }}>{stage.name}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "#059669" }}>{stage.efficiency}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div style={{ padding: 16, background: "rgba(16, 185, 129, 0.2)", borderRadius: 10, textAlign: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#065f46", marginBottom: 6 }}>COMBINED SYSTEM EFFICIENCY</div>
+                <div style={{ fontSize: 36, fontWeight: 900, color: "#047857", letterSpacing: "-0.02em" }}>90% - 95%</div>
+                <div style={{ fontSize: 12, color: "#059669", marginTop: 4 }}>Total water recovery and treatment effectiveness</div>
+              </div>
             </div>
-            <BatchInputPanel onStartBatch={handleStartBatch} />
+
+            <div style={{ marginTop: 10 }}>
+              <button onClick={() => startProcessing()} style={{ padding: "10px 20px", background: "#34d399", borderRadius: 8, color: "#042A2B", fontWeight: 700, fontSize: 15 }}>Run another batch</button>
+            </div>
           </motion.div>
         )}
       </div>
     </div>
   );
 }
-
-
 
 
