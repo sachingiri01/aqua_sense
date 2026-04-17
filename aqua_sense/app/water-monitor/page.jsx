@@ -57,8 +57,6 @@ import TreatmentFlowVisualization from '@/components/monitor/TreatmentFlowVisual
 import Header from '@/components/Header';
 import ClientAuth from "@/components/auth/ClientAuth";
 import PipelineFlow from '@/components/PipelineFlow';
-import { useSession } from "next-auth/react";
-
 export default function WaterMonitor() {
   const [batchData, setBatchData] = useState(null);
   const [predictions, setPredictions] = useState(null);
@@ -66,136 +64,41 @@ export default function WaterMonitor() {
   const [completedBatches, setCompletedBatches] = useState([]);
   const [currentStep, setCurrentStep] = useState('input'); // input, prediction, control, processing, complete
 
-  const handleStartBatch = (data) => {
+  // const handleStartBatch = (data) => {
+  //   setBatchData(data);
+  //   console.log("Batch Data Received:", data);
+  //   setCurrentStep('prediction');
+  // };
+  const handleStartBatch = async (data) => {
     setBatchData(data);
     console.log("Batch Data Received:", data);
-    setCurrentStep('prediction');
+
+    // ⬇️ send to backend (this inserts into batches table)
+    await fetch("/api/batches/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    setCurrentStep("prediction");
   };
- 
 
   const handlePredictionComplete = (predictionResults) => {
-    console.log("Predictions Received:", predictionResults);
     setPredictions(predictionResults);
     setCurrentStep('control');
   };
 
   const handleStartProcessing = (controlData) => {
-    console.log("Processing Started with Control Data:", controlData);
     setProcessingData(controlData);
     setCurrentStep('processing');
   };
- const { data: session } = useSession();
-//  const handleProcessingComplete = async (result) => {
- 
 
-//   console.log("Processing Complete with Result:", result);
-
-//   // send final full batch to backend
-//   await fetch("/api/batches/createFullBatch", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       ...result,
-//       sensorData: batchData,
-//       predictions,
-//       userId: session?.user?.id // if logged in
-//     })
-//   });
-
-//   setCompletedBatches(prev => [...prev, result]);
-//   setCurrentStep('complete');
-// };
-// const handleProcessingComplete = async (result) => {
-//   console.log("Processing Complete with Result:", result);
-
-//   const userId = session?.user?.id || null;
-
-//   // 1️⃣ Create batch
-//   const batchRes = await fetch("/api/batches/create", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       initial_ph: batchData.pH,
-//       initial_turbidity: batchData.turbidity,
-//       initial_tds: batchData.TDS,
-//       initial_do: batchData.DO,
-//       initial_temperature: batchData.temperature,
-//       initial_conductivity: result.tertiary.conductivity,
-//       flow_rate: batchData.flowRate,
-//       intended_reuse: result.intendedUse.name,
-//       ai_predicted_reuse: predictions[0].name,
-//       final_result: "SUITABLE",   // FIXED — DB constraint
-//       user_id: userId
-//     })
-//   });
-
-//   const { batch_id } = await batchRes.json();
-
-
-//   // 2️⃣ Insert primary stage
-//   await fetch("/api/stages/primary", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       batch_id,
-//       ...result.primary
-//     })
-//   });
-
-
-//   // 3️⃣ Insert secondary stage
-//   await fetch("/api/stages/secondary", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       batch_id,
-//       ...result.secondary
-//     })
-//   });
-
-
-//   // 4️⃣ Insert tertiary stage
-//   await fetch("/api/stages/tertiary", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       batch_id,
-//       ...result.tertiary
-//     })
-//   });
-
-//   console.log("Full batch data inserted successfully.");
-//   setCompletedBatches(prev => [...prev, result]);
-//   setCurrentStep('complete');
-// };
-
-const handleProcessingComplete = async (result) => {
-  console.log("Processing Complete with Result:", result);
-
-  const userId = session?.user?.id || null;
-
-  const fullData = {
-    sensorData: batchData,
-    predictions,
-    primary: result.primary,
-    secondary: result.secondary,
-    tertiary: result.tertiary,
-    intendedUse: result.intendedUse,
-    userId
+  const handleProcessingComplete = (result) => {
+    setCompletedBatches(prev => [...prev, result]);
+    setCurrentStep('complete');
   };
-
-  const res = await fetch("/api/batches/complete", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(fullData),
-  });
-
-  const data = await res.json();
-  console.log("Batch saved:", data);
-
-  setCompletedBatches(prev => [...prev, result]);
-  setCurrentStep("complete");
-};
 
   const handleNewBatch = () => {
     setBatchData(null);
@@ -205,26 +108,26 @@ const handleProcessingComplete = async (result) => {
   };
 
   return (
-    
-    <main className="min-h-screen bg-gradient-to-b from-shakespeare-50 via-shakespeare-100 to-shakespeare-200 relative overflow-hidden">
-      {/* Animated water background overlay */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 opacity-30 animate-water-flow bg-gradient-to-br from-shakespeare-300/20 via-aqua-teal/20 to-shakespeare-400/20"></div>
-        d
-        {/* Floating particles */}
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-shakespeare-400/30 rounded-full animate-float-3d blur-sm"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${8 + Math.random() * 4}s`
-            }}
-          />
-        ))}
-      </div>
+    <ClientAuth>
+      <main className="min-h-screen bg-gradient-to-b from-shakespeare-50 via-shakespeare-100 to-shakespeare-200 relative overflow-hidden">
+        {/* Animated water background overlay */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute inset-0 opacity-30 animate-water-flow bg-gradient-to-br from-shakespeare-300/20 via-aqua-teal/20 to-shakespeare-400/20"></div>
+          d
+          {/* Floating particles */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-shakespeare-400/30 rounded-full animate-float-3d blur-sm"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${8 + Math.random() * 4}s`
+              }}
+            />
+          ))}
+        </div>
 
         {/* Content */}
         <div className="fixed top-0 left-0 w-full z-50"><Header /></div>
@@ -377,40 +280,40 @@ const handleProcessingComplete = async (result) => {
                         </p>
                       </div>
 
-                    {/* Latest batch details */}
-                    {completedBatches[completedBatches.length - 1] && (
-                      <div className="glassmorphism rounded-2xl p-6 mb-6">
-                        <h3 className="text-2xl font-display font-bold text-shakespeare-900 mb-4">
-                          Latest Batch Results
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="text-center">
-                            <p className="text-shakespeare-600 text-sm mb-1">Batch Number</p>
-                            <p className="text-3xl font-display font-bold text-royal-blue">
-                              #{completedBatches[completedBatches.length - 1].batchNumber.toString().padStart(3, '0')}
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-shakespeare-600 text-sm mb-1">Intended Use</p>
-                            <p className="text-2xl">
-                              {completedBatches[completedBatches.length - 1].intendedUse.icon}
-                            </p>
-                            <p className="text-sm font-semibold text-shakespeare-900">
-                              {completedBatches[completedBatches.length - 1].intendedUse.name}
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-shakespeare-600 text-sm mb-1">Status</p>
-                            <p className="text-3xl">✅</p>
-                            <p className="text-sm font-semibold text-emerald-600">Success</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-shakespeare-600 text-sm mb-1">Quality</p>
-                            <p className="text-3xl font-display font-bold text-emerald-600">A+</p>
+                      {/* Latest batch details */}
+                      {completedBatches[completedBatches.length - 1] && (
+                        <div className="glassmorphism rounded-2xl p-6 mb-6">
+                          <h3 className="text-2xl font-display font-bold text-shakespeare-900 mb-4">
+                            Latest Batch Results
+                          </h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center">
+                              <p className="text-shakespeare-600 text-sm mb-1">Batch Number</p>
+                              <p className="text-3xl font-display font-bold text-royal-blue">
+                                #{completedBatches[completedBatches.length - 1].batchNumber.toString().padStart(3, '0')}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-shakespeare-600 text-sm mb-1">Intended Use</p>
+                              <p className="text-2xl">
+                                {completedBatches[completedBatches.length - 1].intendedUse.icon}
+                              </p>
+                              <p className="text-sm font-semibold text-shakespeare-900">
+                                {completedBatches[completedBatches.length - 1].intendedUse.name}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-shakespeare-600 text-sm mb-1">Status</p>
+                              <p className="text-3xl">✅</p>
+                              <p className="text-sm font-semibold text-emerald-600">Success</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-shakespeare-600 text-sm mb-1">Quality</p>
+                              <p className="text-3xl font-display font-bold text-emerald-600">A+</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                       {/* Action buttons */}
                       <div className="flex gap-4">
@@ -470,9 +373,9 @@ const handleProcessingComplete = async (result) => {
             </div>
           </div>
 
-        <FooterWave />
-      </div>
-    </main>
-    
+          <FooterWave />
+        </div>
+      </main>
+    </ClientAuth>
   );
 }
